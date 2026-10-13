@@ -98,7 +98,7 @@ npm run verify
 ### Verified results — 12 October 2026
 
 - `npm run verify`: **PASS** — ESLint clean, strict TypeScript clean, 18/18 unit tests passed, and all 26 Next.js routes generated in the production build.
-- `npm run test:e2e`: **PASS** — 19 passed and 5 intentional project-specific skips. Coverage includes the complete 320px guest request, truthful JMD prices/quotes, admin payment-proof review, desktop/mobile Axe audits on six critical routes, 320px overflow checks, and the two preview captures in `artifacts/`.
+- `npm run test:e2e`: **PASS** — 22 passed and 6 intentional project-specific skips. Coverage includes the complete 320px guest request, truthful JMD prices/quotes, admin payment-proof review, desktop/mobile Axe audits on six critical routes, 320px overflow checks, normal-motion mobile navigation, the reduced-motion override, and the two preview captures in `artifacts/`.
 - `npm audit --omit=dev`: **0 production vulnerabilities**.
 - Full `npm audit` reports five high-severity development-tool findings through `eslint-config-next → fast-glob → micromatch → braces`. The current registry has no non-breaking patched path for this Next.js 16.4 lint chain; do not apply npm’s suggested downgrade to Next 14. Track the upstream advisory and keep untrusted glob patterns out of build automation.
 
