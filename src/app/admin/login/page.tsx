@@ -1,0 +1,4 @@
+import Link from "next/link";
+import { Icon } from "@/components/icon";
+import { Notice } from "@/components/ui";
+export default function AdminLoginPage(){return <div className="shell" style={{padding:'6rem 0'}}><div className="card wizard-card" style={{maxWidth:520,margin:'auto'}}><div className="icon-tile"><Icon name="lock"/></div><p className="eyebrow">Staff access</p><h1 style={{fontSize:'3rem'}}>Operations demo</h1><Notice tone="warning" title="No live authentication">This review route contains seeded, non-production records only. Production admin access requires Supabase Auth, MFA policy, server-side role checks and tested RLS.</Notice><p>Use the dashboard to review the intended workflow and role differences.</p><Link className="button" href="/admin">Enter protected-area demo <Icon name="arrow"/></Link></div></div>}

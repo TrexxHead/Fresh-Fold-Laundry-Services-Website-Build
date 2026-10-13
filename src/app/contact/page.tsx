@@ -1,0 +1,5 @@
+import type { Metadata } from "next";
+import { PageHero, Notice } from "@/components/ui";
+import { ContactForm } from "./contact-form";
+export const metadata:Metadata={title:"Contact"};
+export default function ContactPage(){return <><PageHero eyebrow="Contact FreshFold" title="Questions before you hand it over?" intro={<p>Use the development contact seeds below only for owner review. Their ownership and the official WhatsApp link must be confirmed before publication.</p>} aside={<Notice tone="warning" title="Contact details pending verification">Phone: 876-223-6339<br/>Email: freshfoldlaundryjm@gmail.com<br/>Instagram: @freshfoldlaundry.jm</Notice>}/><section className="section section-white"><div className="shell split"><div><h2>Send a note</h2><p>This review build validates the form but does not send an email or WhatsApp message. Production success copy remains disabled until an integration is configured and tested.</p><ul className="list-check"><li>Do not include student ID or payment proof</li><li>Do not include card or banking details</li><li>Use the private order record for sensitive uploads</li></ul></div><ContactForm/></div></section></>}

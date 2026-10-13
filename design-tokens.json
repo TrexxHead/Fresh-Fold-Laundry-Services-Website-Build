@@ -1,0 +1,17 @@
+{
+  "meta": { "name": "FreshFold Clear Day", "version": "1.0.0" },
+  "color": {
+    "sky50": "#F4FBFE", "sky100": "#E3F5FB", "sky200": "#BEE7F4",
+    "sky400": "#52B8D8", "sky600": "#0B6682", "ink": "#102F3B",
+    "inkSoft": "#45636E", "white": "#FFFFFF", "foam": "#EAF8F4",
+    "mint": "#3C9B7A", "coral": "#D95F4B", "sun": "#F6C85F"
+  },
+  "font": {
+    "display": "var(--font-display), Georgia, serif",
+    "body": "var(--font-body), Arial, sans-serif",
+    "size": { "xs": "0.75rem", "sm": "0.875rem", "base": "1rem", "lg": "1.125rem", "xl": "1.5rem", "2xl": "2rem", "3xl": "clamp(2.6rem, 7vw, 5.5rem)" }
+  },
+  "space": { "1": "0.25rem", "2": "0.5rem", "3": "0.75rem", "4": "1rem", "6": "1.5rem", "8": "2rem", "12": "3rem", "16": "4rem", "24": "6rem" },
+  "radius": { "sm": "0.5rem", "md": "0.875rem", "lg": "1.5rem", "pill": "999px" },
+  "shadow": { "soft": "0 14px 40px rgba(16, 47, 59, 0.09)", "lift": "0 22px 60px rgba(16, 47, 59, 0.14)" }
+}
