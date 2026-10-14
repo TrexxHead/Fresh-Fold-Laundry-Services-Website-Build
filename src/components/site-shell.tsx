@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Icon } from "./icon";
 import { motionTokens } from "@/lib/motion";
+import { publicRuntime } from "@/lib/runtime";
 
 const navigation = [
   ["Services & prices", "/services"], ["How it works", "/how-it-works"], ["Schedule", "/service-area"], ["Subscriptions", "/subscriptions"], ["FAQ", "/faq"]
@@ -57,12 +58,13 @@ export function Header() {
 }
 
 export function Footer() {
-  return <footer className="site-footer">
+  const pathname = usePathname();
+  return <footer className={`site-footer ${pathname.startsWith("/book") ? "booking-footer" : ""}`}>
     <div className="shell footer-grid">
-      <div><Link href="/" className="wordmark wordmark-light"><span className="wordmark-mark" aria-hidden="true"><span/><span/><span/></span><span>FreshFold<small>Laundry Company Ltd</small></span></Link><p>Pickup, care and return across Kingston, Jamaica—subject to staff confirmation.</p><p className="fine-print">Owner review build · Contact details and logo must be confirmed before launch.</p></div>
+      <div><Link href="/" className="wordmark wordmark-light"><span className="wordmark-mark" aria-hidden="true"><span/><span/><span/></span><span>FreshFold<small>Laundry Company Ltd</small></span></Link><p>Pickup, care and return across Kingston, Jamaica—subject to staff confirmation.</p>{publicRuntime.isReview && <p className="fine-print">Owner review build · Contact details and logo must be confirmed before launch.</p>}</div>
       <div><h2>Explore</h2><Link href="/services">Services & prices</Link><Link href="/book">Book a pickup</Link><Link href="/orders">Track an order</Link><Link href="/contact">Contact</Link></div>
       <div><h2>Policies</h2><Link href="/terms">Draft Terms</Link><Link href="/privacy">Draft Privacy Notice</Link><Link href="/admin/login">Staff demo</Link><Link href="/design-system">Design system</Link></div>
-      <div><h2>Development contact seed</h2><p>876-223-6339<br/>freshfoldlaundryjm@gmail.com<br/>@freshfoldlaundry.jm</p><p className="fine-print">Verify ownership before publishing.</p></div>
+      {publicRuntime.isReview ? <div><h2>Development contact seed</h2><p>876-223-6339<br/>freshfoldlaundryjm@gmail.com<br/>@freshfoldlaundry.jm</p><p className="fine-print">Verify ownership before publishing.</p></div> : <div><h2>Support</h2><Link href="/contact">Contact FreshFold</Link><Link href="/orders">Track an order</Link></div>}
     </div>
     <div className="shell footer-bottom"><span>© {new Date().getFullYear()} FreshFold Laundry Company Ltd</span><span>Kingston, Jamaica · Prices in JMD</span></div>
   </footer>;

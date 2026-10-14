@@ -10,9 +10,11 @@ A polished, mobile-first owner-review website and order-operations prototype for
 - Accessible Motion for React interaction layer with route continuity, scroll reveals, animated mobile navigation, booking-step feedback and tactile CTA/card states; reduced-motion preferences are honoured.
 - Public Home, Services & Pricing, Book, How It Works, Service Area & Schedule, Subscriptions, FAQ, Contact, draft Terms, draft Privacy, Account, Order Lookup and Design System routes.
 - Five-step guest/account-intent booking flow with central JMD estimate rules, student verification state, Wednesday–Saturday date filtering, Saturday-evening restriction, itemised add-ons, consent and duplicate-submission protection.
-- Browser-persisted owner-review records with masked order lookup and a staff dashboard for queues, order filters, verification, status history, payment review, notices, catalogue, customers, policies, audit and role-gated settings.
-- Relational Supabase/PostgreSQL schema covering the requested entities, immutable history, integer-JMD money, versioned prices and policies, slot-capacity primitive and RLS foundation.
-- Unit tests for pricing, provisional/quote behaviour, schedule rules, schema validation, price approval and idempotency-facing business logic; Playwright journeys for responsive booking, admin operations, access disclosures and accessibility.
+- Browser-persisted owner-review records with a multi-tab customer order hub and staff workspaces for dispatch, chain of custody, requests/exceptions, finance, insights, order verification, notices, catalogue, customers, policies, audit and role-gated settings.
+- Production route contracts for atomic booking, expiring hashed guest access, customer-safe lookup, price decisions, reschedule/support requests, shared rate limits, and private signed-upload intents that fail closed without scanning.
+- Relational Supabase/PostgreSQL workflows for immutable history, integer-JMD money, versioned prices/policies, capacity locking, notification outbox, communications, dispatch, issues, commercial-account foundations and RLS.
+- Tested notification and PII-denying analytics catalogues plus review/production runtime separation, launch-gated indexing, passwordless authentication scaffolds and server-only service credentials.
+- Unit tests for pricing, provisional/quote behaviour, schedules, validation, runtime gates, atomic migration controls, notifications and analytics; Playwright journeys for responsive booking, admin operations, access disclosures and accessibility.
 
 ## Confirmed requirements, assumptions and implementation
 
@@ -74,10 +76,10 @@ Copy `.env.example` to `.env.local` and populate secrets only through local/host
 Production data enablement requires a separate hardening phase:
 
 1. Create a Supabase project in the deployment region approved by the owner.
-2. Apply `supabase/migrations/202610120001_initial_freshfold.sql` to a disposable staging project first.
+2. Apply `supabase/migrations/202610120001_initial_freshfold.sql` and then `supabase/migrations/202610140001_production_workflows.sql` to a disposable staging project first.
 3. Create private `student-ids`, `payment-proofs` and `care-photos` buckets and implement storage policies matching `owns_order`/`is_staff`.
 4. Run adversarial RLS tests with two customers, one Admin and one Super Admin.
-5. Replace the local demo repository with server-only repository adapters; do not fall back silently when production configuration is missing.
+5. Connect the remaining staff repository adapters; production admin deliberately fails closed instead of showing browser-local demo records.
 6. Create the first Super Admin through a controlled out-of-band process and enable the approved MFA policy.
 
 See [Security boundaries](docs/SECURITY-BOUNDARIES.md), [Deployment](docs/DEPLOYMENT.md), [Admin onboarding](docs/ADMIN-ONBOARDING.md) and [Backup/restore](docs/BACKUP-RECOVERY.md).
@@ -95,10 +97,10 @@ npm run verify
 
 `npm run verify` covers lint, strict type checking, unit tests and production build. Playwright is separate because it launches a browser and development server.
 
-### Verified results — 12 October 2026
+### Verified results — 14 October 2026
 
-- `npm run verify`: **PASS** — ESLint clean, strict TypeScript clean, 18/18 unit tests passed, and all 26 Next.js routes generated in the production build.
-- `npm run test:e2e`: **PASS** — 22 passed and 6 intentional project-specific skips. Coverage includes the complete 320px guest request, truthful JMD prices/quotes, admin payment-proof review, desktop/mobile Axe audits on six critical routes, 320px overflow checks, normal-motion mobile navigation, the reduced-motion override, and the two preview captures in `artifacts/`.
+- `npm run verify`: **PASS** — ESLint clean, strict TypeScript clean, 33/33 unit tests passed, and all 36 Next.js routes generated in the production build. (The build needs normal Windows filesystem access when the restricted sandbox cannot canonicalize the OneDrive path.)
+- `npm run test:e2e`: **PASS** — 22 passed and 6 intentional project-specific skips. Coverage includes the complete 320px guest request, truthful JMD prices/quotes, admin payment-proof review, desktop/mobile Axe audits on six critical routes, 320px overflow checks, normal-motion mobile navigation, the reduced-motion override, and preview captures in `artifacts/`.
 - `npm audit --omit=dev`: **0 production vulnerabilities**.
 - Full `npm audit` reports five high-severity development-tool findings through `eslint-config-next → fast-glob → micromatch → braces`. The current registry has no non-breaking patched path for this Next.js 16.4 lint chain; do not apply npm’s suggested downgrade to Next 14. Track the upstream advisory and keep untrusted glob patterns out of build automation.
 
@@ -107,13 +109,13 @@ npm run verify
 | Capability | Review state | Production requirement |
 |---|---|---|
 | Pricing and estimate engine | Implemented | Move active/versioned catalogue reads to Supabase |
-| Local booking/order state | Implemented and labelled demo | Server transaction, idempotency table, slot lock and persistence |
-| Supabase DB/Auth/RLS | Schema foundation only | Project credentials, adapters and adversarial policy tests |
-| Sensitive uploads | File-picker UX only; no file retained | Private buckets, MIME/magic-byte checks, limits, malware scan, signed URLs |
+| Local booking/order state | Implemented and labelled demo | Booking, lookup and guest actions have server contracts; apply migrations and populate approved production configuration |
+| Supabase DB/Auth/RLS | Schema/workflow foundation and clients | Project credentials, staff adapters and adversarial policy tests |
+| Sensitive uploads | No file retained in review mode | Signed intent API exists; create private buckets and add upload completion, magic-byte validation, scanner worker and retention |
 | Email | Not connected; no false success | Approved provider, templates, delivery result handling |
 | WhatsApp | Disabled | Confirm E.164 number; click-to-chat only unless an approved API is added |
 | Payments | Preference and review workflow only | Approved invoice process; never store raw card data |
-| Analytics | Disabled | Consent, privacy review and non-sensitive event allow-list |
+| Analytics | Provider disabled; tested safe-event catalogue | Consent/privacy approval and provider adapter |
 | Error monitoring | Disabled | Redacted production integration and alert routing |
 
 ## Admin onboarding

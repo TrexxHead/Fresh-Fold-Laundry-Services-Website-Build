@@ -5,12 +5,17 @@ import { Footer, Header, StickyBookingAction } from "@/components/site-shell";
 import { DemoBanner } from "@/components/ui";
 import { MotionProvider, RouteTransition } from "@/components/motion-system";
 
+const indexingEnabled = process.env.NEXT_PUBLIC_APP_MODE === "production" && process.env.NEXT_PUBLIC_ENABLE_INDEXING === "true";
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: { default: "FreshFold Laundry | Pickup & delivery in Kingston", template: "%s | FreshFold Laundry" },
   description: "Request laundry pickup, wash, dry, fold and ironing service across Kingston, Jamaica. Every request and estimate is confirmed by staff.",
-  openGraph: { title: "Fresh laundry, without losing your day.", description: "Laundry pickup, care and return across Kingston.", type: "website", locale: "en_JM" },
-  robots: { index: false, follow: false }
+  applicationName: "FreshFold Laundry",
+  category: "laundry service",
+  openGraph: { title: "Fresh laundry, without losing your day.", description: "Laundry pickup, care and return across Kingston.", type: "website", locale: "en_JM", siteName: "FreshFold Laundry" },
+  twitter: { card: "summary", title: "FreshFold Laundry", description: "Laundry pickup, care and return across Kingston." },
+  robots: { index: indexingEnabled, follow: indexingEnabled }
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#E3F5FB" };

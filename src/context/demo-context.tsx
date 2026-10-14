@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { calculateEstimate } from "@/lib/pricing";
-import type { BookingDraft, DemoOrder, OrderStatus, ServiceNotice } from "@/lib/models";
+import type { BookingDraft, DemoOrder, OperationEvent, OrderStatus, ServiceNotice } from "@/lib/models";
 
 const STORAGE_KEY = "freshfold-owner-review-v1";
 
@@ -18,6 +18,10 @@ interface DemoContextValue extends DemoState {
   updateOrderStatus: (id: string, status: OrderStatus, note?: string) => void;
   setStudentStatus: (id: string, status: "VERIFIED" | "REJECTED", reason: string) => void;
   markPaymentProofForReview: (id: string) => void;
+  decidePriceRevision: (id: string, decision: "APPROVED" | "REJECTED") => void;
+  requestReschedule: (id: string, pickupDate: string, pickupSlot: string, note: string) => void;
+  submitSupportRequest: (id: string, note: string) => void;
+  appendOperationEvent: (id: string, event: Omit<OperationEvent, "id" | "occurredAt">) => void;
   toggleNotice: (id: string) => void;
   setDemoRole: (role: "ADMIN" | "SUPER_ADMIN") => void;
   resetDemo: () => void;
@@ -37,12 +41,23 @@ const seeded: DemoState = {
       id: "demo-1", reference: "FF-241012-A7K", guestToken: "demo-a7k", customerName: "Alicia Brown", phoneMasked: "•••-•••-6339",
       location: "UWI Mona", pickupDate: "2026-10-14", pickupSlot: "11:00–11:30 a.m.", status: "AWAITING_STUDENT_VERIFICATION",
       studentStatus: "PENDING", paymentStatus: "NOT_REQUESTED", estimate: makeEstimate("STUDENT", 9), createdAt: "2026-10-12T13:00:00.000Z",
-      history: [{ id: "evt-1", status: "REQUESTED", actor: "Customer", occurredAt: "2026-10-12T13:00:00.000Z", note: "Booking request submitted." }]
+      serviceType: "WASH_FOLD", loadSize: 9, carePreferences: ["Cold-water wash", "No fabric softener"], bagCount: 1,
+      history: [{ id: "evt-1", status: "REQUESTED", actor: "Customer", occurredAt: "2026-10-12T13:00:00.000Z", note: "Booking request submitted." }],
+      communications: [{ id: "com-1", channel: "WHATSAPP", direction: "SYSTEM", summary: "Request received; staff confirmation is still required.", deliveryStatus: "DEMO", occurredAt: "2026-10-12T13:01:00.000Z" }],
+      changeRequests: [], operationEvents: []
     },
     {
       id: "demo-2", reference: "FF-241012-M4R", guestToken: "demo-m4r", customerName: "M. Reid", phoneMasked: "•••-•••-0182",
       location: "New Kingston", pickupDate: "2026-10-15", pickupSlot: "8:00–8:30 p.m.", status: "PRICE_APPROVAL_REQUIRED",
       studentStatus: "NOT_APPLICABLE", paymentStatus: "PENDING", estimate: makeEstimate("NON_STUDENT", 12, [{ itemId: "iron-shirt", quantity: 2 }]), createdAt: "2026-10-12T14:20:00.000Z",
+      serviceType: "WASH_AND_IRON", loadSize: 12, carePreferences: ["Fragrance-free / sensitive-skin products"], actualWeightLb: 14.2, bagCount: 2,
+      priceRevision: { originalTotalJmd: 2750, revisedTotalJmd: 3150, reason: "Demo: the measured load is above the selected 12 lb package. Final excess-weight policy still requires owner approval.", status: "PENDING" },
+      invoice: { invoiceNumber: "DRAFT-FF-0002", amountJmd: 3150, status: "DRAFT" },
+      communications: [{ id: "com-2", channel: "WHATSAPP", direction: "OUTBOUND", summary: "A revised amount is ready for your review.", deliveryStatus: "DEMO", occurredAt: "2026-10-12T17:02:00.000Z" }],
+      changeRequests: [], operationEvents: [
+        { id: "op-2a", type: "RECEIVED", label: "Laundry received at the care hub", station: "Intake", customerVisible: true, occurredAt: "2026-10-12T16:40:00.000Z" },
+        { id: "op-2b", type: "WEIGHT", label: "Two bags weighed at 14.2 lb", station: "Intake", customerVisible: true, occurredAt: "2026-10-12T16:55:00.000Z" }
+      ],
       history: [
         { id: "evt-2a", status: "REQUESTED", actor: "Customer", occurredAt: "2026-10-12T14:20:00.000Z" },
         { id: "evt-2b", status: "PICKED_UP", actor: "Demo staff", occurredAt: "2026-10-12T16:40:00.000Z" },
@@ -54,7 +69,16 @@ const seeded: DemoState = {
       id: "demo-3", reference: "FF-241011-P2N", guestToken: "demo-p2n", customerName: "Jordan Lee", phoneMasked: "•••-•••-7721",
       location: "Half-Way Tree", pickupDate: "2026-10-14", pickupSlot: "1:00–1:30 p.m.", status: "PAYMENT_REVIEW",
       studentStatus: "NOT_APPLICABLE", paymentStatus: "REVIEW", estimate: makeEstimate("NON_STUDENT", 6), createdAt: "2026-10-11T18:00:00.000Z",
-      history: [{ id: "evt-3", status: "PAYMENT_REVIEW", actor: "Customer", occurredAt: "2026-10-12T12:00:00.000Z", note: "Proof metadata uploaded; payment is not verified." }]
+      serviceType: "WASH_FOLD", loadSize: 6, carePreferences: ["Cold-water wash"], actualWeightLb: 5.8, bagCount: 1, packageCount: 1,
+      invoice: { invoiceNumber: "FF-2026-0003", amountJmd: 1300, status: "ISSUED", issuedAt: "2026-10-12T11:30:00.000Z" },
+      returnWindow: "Thursday · staff confirmation pending",
+      history: [{ id: "evt-3", status: "PAYMENT_REVIEW", actor: "Customer", occurredAt: "2026-10-12T12:00:00.000Z", note: "Proof metadata uploaded; payment is not verified." }],
+      communications: [{ id: "com-3", channel: "EMAIL", direction: "SYSTEM", summary: "Transfer proof received for staff review.", deliveryStatus: "DEMO", occurredAt: "2026-10-12T12:01:00.000Z" }],
+      changeRequests: [], operationEvents: [
+        { id: "op-3a", type: "RECEIVED", label: "Bag received", station: "Intake", customerVisible: true, occurredAt: "2026-10-12T09:30:00.000Z" },
+        { id: "op-3b", type: "WASHING", label: "Care cycle started", station: "Wash", customerVisible: true, occurredAt: "2026-10-12T10:15:00.000Z" },
+        { id: "op-3c", type: "PACKED", label: "Quality checked and packed", station: "Pack", customerVisible: true, occurredAt: "2026-10-12T11:20:00.000Z" }
+      ]
     }
   ]
 };
@@ -114,7 +138,13 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
       paymentStatus: "NOT_REQUESTED",
       estimate,
       createdAt: now,
-      history: [{ id: randomCode(12), status: "REQUESTED", actor: "Customer", occurredAt: now, note: "Booking request submitted with Terms v0.1-draft consent." }]
+      serviceType: draft.serviceType,
+      loadSize: draft.loadSize,
+      carePreferences: draft.preferences,
+      history: [{ id: randomCode(12), status: "REQUESTED", actor: "Customer", occurredAt: now, note: "Booking request submitted with Terms v0.1-draft consent." }],
+      communications: [{ id: randomCode(12), channel: "IN_APP", direction: "SYSTEM", summary: "Demo request received; staff confirmation is still required.", deliveryStatus: "DEMO", occurredAt: now }],
+      changeRequests: [],
+      operationEvents: []
     };
     setState((current) => ({ ...current, orders: [order, ...current.orders] }));
     return order;
@@ -142,12 +172,51 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     }) }));
   }, []);
 
+  const decidePriceRevision = useCallback((id: string, decision: "APPROVED" | "REJECTED") => {
+    const now = new Date().toISOString();
+    const status: OrderStatus = decision === "APPROVED" ? "PRICE_APPROVED" : "ON_HOLD";
+    setState((current) => ({ ...current, orders: current.orders.map((order) => order.id !== id || !order.priceRevision ? order : {
+      ...order,
+      status,
+      priceRevision: { ...order.priceRevision, status: decision, decidedAt: now },
+      history: [...order.history, { id: randomCode(12), status, actor: "Customer", occurredAt: now, note: `Revised price ${decision.toLowerCase()} in the demo order hub.` }],
+      communications: [...(order.communications ?? []), { id: randomCode(12), channel: "IN_APP" as const, direction: "INBOUND" as const, summary: `Customer ${decision.toLowerCase()} the revised price.`, deliveryStatus: "DEMO" as const, occurredAt: now }]
+    }) }));
+  }, []);
+
+  const requestReschedule = useCallback((id: string, pickupDate: string, pickupSlot: string, note: string) => {
+    const now = new Date().toISOString();
+    setState((current) => ({ ...current, orders: current.orders.map((order) => order.id !== id ? order : {
+      ...order,
+      status: "RESCHEDULE_REQUESTED",
+      changeRequests: [...(order.changeRequests ?? []), { id: randomCode(12), type: "RESCHEDULE" as const, status: "PENDING" as const, note, requestedDate: pickupDate, requestedSlot: pickupSlot, createdAt: now }],
+      history: [...order.history, { id: randomCode(12), status: "RESCHEDULE_REQUESTED", actor: "Customer", occurredAt: now, note: "Alternative pickup requested; existing capacity has not been moved." }]
+    }) }));
+  }, []);
+
+  const submitSupportRequest = useCallback((id: string, note: string) => {
+    const now = new Date().toISOString();
+    setState((current) => ({ ...current, orders: current.orders.map((order) => order.id !== id ? order : {
+      ...order,
+      changeRequests: [...(order.changeRequests ?? []), { id: randomCode(12), type: "GENERAL_SUPPORT" as const, status: "PENDING" as const, note, createdAt: now }],
+      communications: [...(order.communications ?? []), { id: randomCode(12), channel: "IN_APP" as const, direction: "INBOUND" as const, summary: "Customer submitted a private support request.", deliveryStatus: "DEMO" as const, occurredAt: now }]
+    }) }));
+  }, []);
+
+  const appendOperationEvent = useCallback((id: string, event: Omit<OperationEvent, "id" | "occurredAt">) => {
+    setState((current) => ({ ...current, orders: current.orders.map((order) => order.id !== id ? order : {
+      ...order,
+      operationEvents: [...(order.operationEvents ?? []), { ...event, id: randomCode(12), occurredAt: new Date().toISOString() }]
+    }) }));
+  }, []);
+
   const value = useMemo<DemoContextValue>(() => ({
     ...state, ready, submitBooking, updateOrderStatus, setStudentStatus, markPaymentProofForReview,
+    decidePriceRevision, requestReschedule, submitSupportRequest, appendOperationEvent,
     toggleNotice: (id) => setState((current) => ({ ...current, notices: current.notices.map((notice) => notice.id === id ? { ...notice, active: !notice.active } : notice) })),
     setDemoRole: (demoRole) => setState((current) => ({ ...current, demoRole })),
     resetDemo: () => setState(seeded)
-  }), [markPaymentProofForReview, ready, setStudentStatus, state, submitBooking, updateOrderStatus]);
+  }), [appendOperationEvent, decidePriceRevision, markPaymentProofForReview, ready, requestReschedule, setStudentStatus, state, submitBooking, submitSupportRequest, updateOrderStatus]);
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
 }

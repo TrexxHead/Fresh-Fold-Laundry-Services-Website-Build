@@ -99,6 +99,49 @@ export interface StatusEvent {
   note?: string;
 }
 
+export interface CustomerCommunication {
+  id: string;
+  channel: "EMAIL" | "WHATSAPP" | "PHONE" | "IN_APP";
+  direction: "OUTBOUND" | "INBOUND" | "SYSTEM";
+  summary: string;
+  deliveryStatus: "DEMO" | "QUEUED" | "SENT" | "DELIVERED" | "FAILED";
+  occurredAt: string;
+}
+
+export interface PriceRevision {
+  originalTotalJmd: number;
+  revisedTotalJmd: number;
+  reason: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  decidedAt?: string;
+}
+
+export interface InvoiceSnapshot {
+  invoiceNumber: string;
+  amountJmd: number;
+  status: "DRAFT" | "ISSUED" | "PAID" | "VOID" | "REFUNDED";
+  issuedAt?: string;
+}
+
+export interface ChangeRequest {
+  id: string;
+  type: "RESCHEDULE" | "CANCELLATION" | "PRICE_QUESTION" | "GENERAL_SUPPORT";
+  status: "PENDING" | "APPROVED" | "DECLINED" | "WITHDRAWN";
+  note: string;
+  requestedDate?: string;
+  requestedSlot?: string;
+  createdAt: string;
+}
+
+export interface OperationEvent {
+  id: string;
+  type: "BAG_COUNT" | "WEIGHT" | "RECEIVED" | "SORTED" | "WASHING" | "DRYING" | "FOLDING" | "IRONING" | "QUALITY_CHECK" | "PACKED" | "READY" | "EXCEPTION" | "REWASH" | "HANDOFF";
+  label: string;
+  station?: string;
+  customerVisible: boolean;
+  occurredAt: string;
+}
+
 export interface DemoOrder {
   id: string;
   reference: string;
@@ -114,7 +157,73 @@ export interface DemoOrder {
   estimate: Estimate;
   createdAt: string;
   history: StatusEvent[];
+  serviceType?: ServiceType;
+  loadSize?: LoadSize;
+  carePreferences?: string[];
+  actualWeightLb?: number;
+  returnWindow?: string;
+  priceRevision?: PriceRevision;
+  invoice?: InvoiceSnapshot;
+  communications?: CustomerCommunication[];
+  changeRequests?: ChangeRequest[];
+  operationEvents?: OperationEvent[];
+  bagCount?: number;
+  packageCount?: number;
   internalNote?: string;
+}
+
+export interface CustomerOrderView {
+  id: string;
+  reference: string;
+  customerName: string;
+  location: string;
+  pickupDate: string;
+  pickupSlot: string;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  studentStatus: DemoOrder["studentStatus"];
+  estimate: Estimate;
+  serviceType?: ServiceType;
+  loadSize?: LoadSize;
+  carePreferences: string[];
+  actualWeightLb?: number;
+  returnWindow?: string;
+  priceRevision?: PriceRevision;
+  invoice?: InvoiceSnapshot;
+  history: StatusEvent[];
+  communications: CustomerCommunication[];
+  changeRequests: ChangeRequest[];
+  operationEvents: OperationEvent[];
+  bagCount?: number;
+  packageCount?: number;
+}
+
+export function toCustomerOrderView(order: DemoOrder): CustomerOrderView {
+  return {
+    id: order.id,
+    reference: order.reference,
+    customerName: order.customerName,
+    location: order.location,
+    pickupDate: order.pickupDate,
+    pickupSlot: order.pickupSlot,
+    status: order.status,
+    paymentStatus: order.paymentStatus,
+    studentStatus: order.studentStatus,
+    estimate: order.estimate,
+    serviceType: order.serviceType,
+    loadSize: order.loadSize,
+    carePreferences: order.carePreferences ?? [],
+    actualWeightLb: order.actualWeightLb,
+    returnWindow: order.returnWindow,
+    priceRevision: order.priceRevision,
+    invoice: order.invoice,
+    history: order.history,
+    communications: order.communications ?? [],
+    changeRequests: order.changeRequests ?? [],
+    operationEvents: (order.operationEvents ?? []).filter((event) => event.customerVisible),
+    bagCount: order.bagCount,
+    packageCount: order.packageCount,
+  };
 }
 
 export interface ServiceNotice {

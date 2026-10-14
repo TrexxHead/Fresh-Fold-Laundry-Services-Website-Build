@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon, type IconName } from "./icon";
 import { MotionCard, Reveal } from "./motion-system";
+import { publicRuntime } from "@/lib/runtime";
 
 export function PageHero({ eyebrow, title, intro, actions, aside }: { eyebrow: string; title: ReactNode; intro: ReactNode; actions?: ReactNode; aside?: ReactNode }) {
   return <section className="page-hero"><div className="shell hero-grid"><Reveal className="hero-copy"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><div className="hero-intro">{intro}</div>{actions && <div className="hero-actions">{actions}</div>}</Reveal>{aside && <Reveal className="hero-aside" delay={.08}>{aside}</Reveal>}</div></section>;
@@ -24,5 +25,6 @@ export function CTASection() {
 }
 
 export function DemoBanner() {
-  return <div className="demo-banner"><div className="shell"><Icon name="warning" size={18}/><span><strong>Owner review build:</strong> data and actions are local demo records. No message, payment, upload or booking leaves this browser.</span></div></div>;
+  if (!publicRuntime.isReview) return null;
+  return <div className="demo-banner"><div className="shell"><Icon name="warning" size={18}/><span><strong>Owner review build:</strong> realistic demo records are active. No external message, payment or sensitive upload is sent.</span></div></div>;
 }

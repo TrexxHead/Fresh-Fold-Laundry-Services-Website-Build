@@ -21,3 +21,9 @@ export const FRIENDLY_STATUS: Record<OrderStatus, string> = {
   ON_HOLD: "On hold — staff will contact you",
   CANCELLED: "Cancelled"
 };
+
+export function statusClass(status: OrderStatus): string {
+  if (status === "PAID" || status === "COMPLETED" || status === "PRICE_APPROVED") return "pill pill-success";
+  if (status.includes("REVIEW") || status.includes("REQUIRED") || status.includes("AWAITING") || status === "ON_HOLD") return "pill pill-warning";
+  return "pill";
+}
